@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,40 +11,34 @@
 #define FS_SIGNATURE_LEN   8
 #define FAT_EOC            0xFFFF
 
-
 struct __attribute__((packed)) superblock {
-    char     signature[FS_SIGNATURE_LEN]; 
-    uint16_t total_blocks;               
-    uint16_t root_index;                
-    uint16_t data_index;                  
-    uint16_t data_count;                  
-    uint8_t  fat_blocks;                  
-    uint8_t  padding[4079];               
+    char     signature[FS_SIGNATURE_LEN];
+    uint16_t total_blocks;
+    uint16_t root_index;
+    uint16_t data_index;
+    uint16_t data_count;
+    uint8_t  fat_blocks;
+    uint8_t  padding[4079];
 };
-
 
 struct __attribute__((packed)) root_entry {
-    char     filename[FS_FILENAME_LEN];    
-    uint32_t size;                        
-    uint16_t first_data_index;           
-    uint8_t  padding[10];              
+    char     filename[FS_FILENAME_LEN];
+    uint32_t size;
+    uint16_t first_data_index;
+    uint8_t  padding[10];
 };
-
 
 struct fd_entry {
-    int     used;         
-    int     root_index;   
-    size_t  offset;       
+    int     used;
+    int     root_index;
+    size_t  offset;
 };
 
-
-
-static struct superblock   sb;                     
-static uint16_t           *fat = NULL;            
-static struct root_entry   root[FS_FILE_MAX_COUNT]; 
+static struct superblock   sb;
+static uint16_t           *fat = NULL;
+static struct root_entry   root[FS_FILE_MAX_COUNT];
 static struct fd_entry     fd_table[FS_OPEN_MAX_COUNT];
 static int                 fs_mounted = 0;
-
 
 static int find_root(const char *filename) {
     for (int i = 0; i < FS_FILE_MAX_COUNT; i++) {
@@ -158,7 +151,6 @@ static int write_root_dir(void) {
     return 0;
 }
 
-
 int fs_mount(const char *diskname) {
     if (fs_mounted) {
         return -1;
@@ -213,14 +205,11 @@ int fs_info(void) {
     if (!fs_mounted || fat == NULL) {
         return -1;
     }
-
     printf("total_blk_count=%u\n", sb.total_blocks);
     printf("fat_blk_count=%u\n", sb.fat_blocks);
     printf("rdir_blk=%u\n", sb.root_index);
     printf("data_blk=%u\n", sb.data_index);
     printf("data_blk_count=%u\n", sb.data_count);
-
-
     size_t free_fat = 0;
     for (uint16_t i = 1; i < sb.data_count; i++) {
         if (fat[i] == 0) {
@@ -228,7 +217,6 @@ int fs_info(void) {
         }
     }
     printf("fat_free_ratio=%zu/%u\n", free_fat, sb.data_count);
-
     size_t free_root = 0;
     for (int i = 0; i < FS_FILE_MAX_COUNT; i++) {
         if (root[i].filename[0] == '\0') {
@@ -248,11 +236,11 @@ int fs_create(const char *filename) {
         return -1;
     }
     if (find_root(filename) != -1) {
-        return -1; 
+        return -1;
     }
     int idx = find_free_root();
     if (idx < 0) {
-        return -1;  
+        return -1;
     }
     memset(&root[idx], 0, sizeof(struct root_entry));
     strncpy(root[idx].filename, filename, FS_FILENAME_LEN - 1);
@@ -268,7 +256,7 @@ int fs_delete(const char *filename) {
     }
     int idx = find_root(filename);
     if (idx < 0) {
-        return -1;  
+        return -1;
     }
     for (int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
         if (fd_table[i].used && fd_table[i].root_index == idx) {
@@ -306,11 +294,11 @@ int fs_open(const char *filename) {
     }
     int rdx = find_root(filename);
     if (rdx < 0) {
-        return -1; 
+        return -1;
     }
     int fd = find_free_fd();
     if (fd < 0) {
-        return -1;  
+        return -1;
     }
     fd_table[fd].used = 1;
     fd_table[fd].root_index = rdx;
@@ -372,7 +360,7 @@ int fs_read(int fd, void *buf, size_t count) {
     size_t file_off = fd_table[fd].offset;
 
     if (file_off >= re->size) {
-        return 0; 
+        return 0;
     }
     if (count > re->size - file_off) {
         count = re->size - file_off;
@@ -415,8 +403,7 @@ int fs_write(int fd, void *buf, size_t count) {
     int rdx = fd_table[fd].root_index;
     struct root_entry *re = &root[rdx];
     size_t file_off = fd_table[fd].offset;
-    size_t old_size = re->size;
-    size_t new_end = file_off + count; 
+    size_t new_end = file_off + count;
 
     if (re->first_data_index == FAT_EOC && count > 0) {
         uint16_t nb = find_free_fat();
@@ -462,7 +449,6 @@ int fs_write(int fd, void *buf, size_t count) {
             prev = nb;
         }
     }
-
 
     curr = re->first_data_index;
     prev = FAT_EOC;
