@@ -1,12 +1,10 @@
-# Compiler and flags
+
 CC      := gcc
 CFLAGS  := -Wall -Wextra -Werror -I.
 
-# Source and object files
 SRCS    := fs.c disk.c
 OBJS    := $(SRCS:.c=.o)
 
-# Target library
 LIB     := libfs.a
 
 .PHONY: all clean
@@ -21,3 +19,4 @@ $(LIB): $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(LIB)
+
