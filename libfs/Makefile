@@ -1,9 +1,13 @@
 
+
+
 CC      := gcc
 CFLAGS  := -Wall -Wextra -Werror -I.
 
+
 SRCS    := fs.c disk.c
 OBJS    := $(SRCS:.c=.o)
+
 
 LIB     := libfs.a
 
@@ -20,6 +24,6 @@ $(LIB): $(OBJS)
 clean:
 	rm -f $(OBJS) $(LIB)
 
-
-%: 
+%:
 	@$(MAKE) -C ../apps $@
+	@cp ../apps/$@ .
