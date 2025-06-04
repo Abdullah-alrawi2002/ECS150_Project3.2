@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -205,6 +204,7 @@ int fs_info(void) {
     if (!fs_mounted || fat == NULL) {
         return -1;
     }
+    printf("FS Info:\n");
     printf("total_blk_count=%u\n", sb.total_blocks);
     printf("fat_blk_count=%u\n", sb.fat_blocks);
     printf("rdir_blk=%u\n", sb.root_index);
@@ -277,6 +277,7 @@ int fs_ls(void) {
     if (!fs_mounted) {
         return -1;
     }
+    printf("FS Ls:\n");
     for (int i = 0; i < FS_FILE_MAX_COUNT; i++) {
         if (root[i].filename[0] != '\0') {
             printf("file: %s, size: %u, data_blk: %u\n",
@@ -358,14 +359,12 @@ int fs_read(int fd, void *buf, size_t count) {
     int rdx = fd_table[fd].root_index;
     struct root_entry *re = &root[rdx];
     size_t file_off = fd_table[fd].offset;
-
     if (file_off >= re->size) {
         return 0;
     }
     if (count > re->size - file_off) {
         count = re->size - file_off;
     }
-
     size_t bytes_read = 0;
     size_t skip_blocks = file_off / BLOCK_SIZE;
     size_t block_off = file_off % BLOCK_SIZE;
@@ -404,7 +403,6 @@ int fs_write(int fd, void *buf, size_t count) {
     struct root_entry *re = &root[rdx];
     size_t file_off = fd_table[fd].offset;
     size_t new_end = file_off + count;
-
     if (re->first_data_index == FAT_EOC && count > 0) {
         uint16_t nb = find_free_fat();
         if (nb == 0) {
@@ -413,7 +411,6 @@ int fs_write(int fd, void *buf, size_t count) {
         fat[nb] = FAT_EOC;
         re->first_data_index = nb;
     }
-
     uint16_t curr = re->first_data_index;
     uint16_t prev = FAT_EOC;
     size_t existing_blocks = 0;
@@ -449,7 +446,6 @@ int fs_write(int fd, void *buf, size_t count) {
             prev = nb;
         }
     }
-
     curr = re->first_data_index;
     prev = FAT_EOC;
     size_t skip_blocks = file_off / BLOCK_SIZE;
@@ -466,7 +462,6 @@ int fs_write(int fd, void *buf, size_t count) {
             curr = nb;
         }
     }
-
     size_t bytes_written = 0;
     while (bytes_written < count && curr != FAT_EOC) {
         size_t block_off = (file_off + bytes_written) % BLOCK_SIZE;
@@ -490,7 +485,6 @@ int fs_write(int fd, void *buf, size_t count) {
         prev = curr;
         curr = fat[curr];
     }
-
     fd_table[fd].offset += bytes_written;
     if (fd_table[fd].offset > re->size) {
         re->size = fd_table[fd].offset;
